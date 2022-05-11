@@ -107,22 +107,27 @@ services:
       PORT: 9021
 
   tigergraph:
-    image: docker.tigergraph.com/tigergraph-dev:latest
-    hostname: tigergraph
+    image: "xpertmind/tigergraph:latest"
     container_name: tigergraph
-    user: tigergraph
+    restart: unless-stopped
+    ports:
+      - '9000:9000'
+      - '14240:14240'
     ulimits:
       nofile:
         soft: 1000000
         hard: 1000000
-    tty: true
-    stdin_open: true
-    ports:
-      - 9000:9000
-      - 14240:14240
     volumes:
       - ./graph-data:/home/tigergraph/graph-data
       - ./entitlements.gsql:/home/tigergraph/entitlements.gsql
+    stdin_open: true
+    tty: true
+
+    healthcheck:
+            test: curl --fail http://localhost:9000/echo
+            interval: 5s
+            timeout: 10s
+            retries: 5
 
   mariadb:
     image: mariadb:10
@@ -144,4 +149,12 @@ services:
     environment:
       PMA_HOST: mariadb
     ports:
-      - 3307:80
+      - 8080:80
+
+networks:
+    tg_net:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+            - subnet: 10.16.33.0/28
